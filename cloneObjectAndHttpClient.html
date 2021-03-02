@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>Базавая часть http клиента и копирования объектов</title>
+</head>
+<body>
+
+<script>
+    class HttpClient {
+        baseUrl = '';
+
+        constructor(baseUrl = null) {
+            if (baseUrl) {
+                this.setBaseUrl(baseUrl);
+            }
+
+            //  привяззываем контекст для универсальности интерфейса
+            this.get = this.get.bind(this);
+            this.setBaseUrl = this.setBaseUrl.bind(this);
+        }
+
+        /**
+         * @public
+         * @method get
+         * @param path
+         * @param params
+         * returns Promise
+         */
+        get(
+            callback = (/*сюда можно вставлять любой JSON на пример default или 404*/) => {},
+            path = '', params = {}
+        ) {
+            return this._request({
+                method: "GET",
+                path,
+                params
+            }).then(data => callback(data));
+        }
+
+        /**
+         * @public
+         * @method setBaseUrl
+         * @param baseUrl
+         * returns string
+         */
+        setBaseUrl(baseUrl) {
+            this.baseUrl = baseUrl;
+            return this;
+        }
+
+        /**
+         * @private
+         * @method _buildParams
+         * @param params
+         * returns string
+         */
+        _buildParams(params) {
+            return '?' + Object.entries(params).map(([key, val]) => `${key}=${val}`).join('&');
+        }
+
+        /**
+         * @private
+         * @method _request
+         * @param options
+         * returns Promise
+         */
+        async _request(options) {
+            const {method, path, params, body} = options;
+
+            const resultParams = params ? this._buildParams(params) : '';
+
+            const url = `${this.baseUrl}${path}${resultParams}`;
+
+            const response = await fetch(url, {
+                method,
+                mode: "cors",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body && JSON.stringify(body)
+            });
+
+            return await response.json();
+        }
+    }
+
+    class CloneObject {
+        /**
+         * испоьзоать для разпарсивания данных пришедших с сервера в виде JSON
+         *
+         * @public
+         * @method cloneObjWithJSON
+         * @param json
+         * returns Object
+         */
+        cloneObjWithJSON = (json) => JSON.parse(JSON.stringify(json));
+
+        /**
+         * использовать для поверхностного копирования объекта,
+         * это означает что вложенные объекты будут ссылаться на 1 и тот же прототип
+         *
+         * @public
+         * @method cloneObjWithAssign
+         * @param json
+         * returns Object
+         */
+        cloneObjWithAssign = (json) => Object.assign({}, json);
+
+        /**
+         * использовать для копирования объектов в поддержке ES2017+ версий
+         * а также он прост в написании
+         *
+         * @public
+         * @method cloneObjWithDestructurization
+         * @param json
+         * returns Object
+         */
+        cloneObjWithDestructurization = (json) => ({...json});
+
+        /**
+         * использовать в случаее глубокого копирования объекта а также ссылок на объект
+         *
+         * @public
+         * @method cloneDeep
+         * @param obj
+         * returns Object
+         */
+        cloneDeep = (obj) => {
+            let newObj = {};
+            for (let key in obj) {
+                if (typeof obj[key] !== "object" || obj[key] !== null) {
+                    newObj[key] = obj[key];
+                } else {
+                    newObj[key] = this.cloneDeep(obj[key])
+                }
+            }
+            return newObj
+        }
+    }
+
+    const cloneObject = new CloneObject();
+    /*
+    разкомментировать для быстрой проверки JSON to Object в консоле браузера
+    window.cloneObject = cloneObject;
+    */
+
+    const domenStr = 'https://jsonplaceholder.typicode.com/';
+    const pathStr = 'todos';
+    let newObj;
+    const httpClient = new HttpClient();
+
+    // пример для альтернативного создания запросов
+    // httpClient(domenStr)
+    //     .get(() => {}, 'some-path', {some: 'obj',news: true});
+    //     только для поста нужно создать метод, но это не проблема в данной программе
+    //     .post(() => {}, 'some-path', {some: 'obj',news: true}, body: {some: "value"});
+
+
+    httpClient.setBaseUrl(domenStr)
+        .get((data) => {
+            // newObj = cloneObject.cloneObjWithAssign(data);
+            // newObj = cloneObject.cloneObjWithDestructurization(data);
+            // newObj = cloneObject.cloneDeep(data);
+            newObj = cloneObject.cloneObjWithJSON(data);
+
+            // дальше с этим объектом можно делать всё что угодно ;)
+            console.time()
+            console.log(typeof newObj);
+            console.timeEnd()
+        }, pathStr);
+
+    // здесь описанна сама концепция создания запросов и копирования
+    // объектов и JSON, на первый взгляд возможно покажется что система
+    // переусложнена, но она открыта для рассширения, и закрыта
+    // для изменений, то есть можно создавать новые интерфейсы запросов
+    // POST,PUT, DELETE, и понятно что они делают определённые запросы
+    // по названию интерфейса а реализация уже не важна, я постарался сделать
+    // так что бы были задействованы принцыпы singleton, open closers,
+    // dependency inversion, а так же ассоциативно связал 2 предоставленных
+    // класса, а так же различные способы копирования объектов, и все они
+    // зависят от ситуаций
+</script>
+
+</body>
+</html>
