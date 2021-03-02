@@ -169,7 +169,7 @@
             newObj = cloneObject.cloneObjWithJSON(data);
 
             // дальше с этим объектом можно делать всё что угодно ;)
-            console.log(newObj);
+            // console.log(newObj);
         }, pathStr);
 
     // здесь описанна сама концепция создания запросов и копирования
@@ -203,10 +203,77 @@
     const a = { foo: "bar", obj: { a: 1, b: 2, obj: {a: 2} } };
     const b = deepClone(a);
     a.obj.obj.a = 1000;
-
+    console.log('-------------------------');
+    console.log('clone obj with recursion');
     console.log(a);
     console.log(b);
+    console.log('-------------------------');
+    console.log('parse JSON');
+    const parseJSON = (json) => JSON.parse(JSON.stringify(json));
 
+    const newJSON = parseJSON({
+            "productId": 1,
+            "productName": "An ice sculpture",
+            "price": 12.50,
+            "tags": [ "cold", "ice" ],
+            "dimensions": {
+                "length": 7.0,
+                "width": 12.0,
+                "height": 9.5
+            }
+        }
+    )
+    console.log('newJSON', newJSON);
+    const newBigJSON = parseJSON({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$id": "http://example.com/product.schema.json",
+            "title": "Product",
+            "description": "A product from Acme's catalog",
+            "type": "object",
+            "properties": {
+                "productId": {
+                    "description": "The unique identifier for a product",
+                    "type": "integer"
+                },
+                "productName": {
+                    "description": "Name of the product",
+                    "type": "string"
+                },
+                "price": {
+                    "description": "The price of the product",
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "tags": {
+                    "description": "Tags for the product",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "dimensions": {
+                    "type": "object",
+                    "properties": {
+                        "length": {
+                            "type": "number"
+                        },
+                        "width": {
+                            "type": "number"
+                        },
+                        "height": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [ "length", "width", "height" ]
+                }
+            },
+            "required": [ "productId", "productName", "price" ]
+        }
+    );
+
+    console.log('newBigJSON', newBigJSON);
 
 </script>
 
