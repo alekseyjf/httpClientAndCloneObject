@@ -169,9 +169,7 @@
             newObj = cloneObject.cloneObjWithJSON(data);
 
             // дальше с этим объектом можно делать всё что угодно ;)
-            console.time()
-            console.log(typeof newObj);
-            console.timeEnd()
+            console.log(newObj);
         }, pathStr);
 
     // здесь описанна сама концепция создания запросов и копирования
@@ -184,6 +182,32 @@
     // dependency inversion, а так же ассоциативно связал 2 предоставленных
     // класса, а так же различные способы копирования объектов, и все они
     // зависят от ситуаций
+
+    const deepClone = obj => {
+        if (obj === null) return null;
+        let clone = Object.assign({}, obj);
+
+        Object.keys(clone).forEach(
+            key =>
+                (clone[key] =
+                    typeof obj[key] === "object" ? deepClone(obj[key]) : obj[key])
+        );
+
+        return Array.isArray(obj) && obj.length
+            ? (clone.length = obj.length) && Array.from(clone)
+            : Array.isArray(obj)
+                ? Array.from(obj)
+                : clone;
+    };
+
+    const a = { foo: "bar", obj: { a: 1, b: 2, obj: {a: 2} } };
+    const b = deepClone(a);
+    a.obj.obj.a = 1000;
+
+    console.log(a);
+    console.log(b);
+
+
 </script>
 
 </body>
